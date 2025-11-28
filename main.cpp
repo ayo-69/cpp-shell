@@ -1,8 +1,11 @@
-#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <sched.h>
 #include <sstream>
 #include <string>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <vector>
 
 using namespace std;
@@ -13,7 +16,7 @@ vector<char *> parse(string line) {
   string t;
   while (stream >> t)
     tokens.push_back(const_cast<char *>(t.c_str()));
-  tokens.push_back(nullptr); 
+  tokens.push_back(nullptr);
   return tokens;
 }
 
@@ -26,11 +29,24 @@ int main() {
     getline(cin, input);
 
     // Parse input
-    vector<char*> tokens = parse(input); 
+    vector<char *> args = parse(input);
 
     // Execute
-    
-    // exit 
+    pid_t pid = fork();
+    if (pid == 0) {
+      // Child process
+      if (execvp(args[0], args.data()) == -1)
+        perror("execvp failed");
+      exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+      cerr << "fork failed" << endl;
+      continue;
+    } else {
+      // Parent process
+      wait(nullptr);
+    }
+
+    // exit
     if (input == "exit")
       break;
   }
