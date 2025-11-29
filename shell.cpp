@@ -8,22 +8,32 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fstream>
+#include <cstring>
 #include <vector>
 
 extern char **environ;
 
 using namespace std;
 
-vector<char *> parse(string line) {
+vector<string> parse(string line) {
   stringstream stream(line);
-  vector<char *> tokens;
+  vector<string> tokens;
   string t;
   while (stream >> t)
-    tokens.push_back(const_cast<char *>(t.c_str()));
-  tokens.push_back(nullptr);
+    tokens.push_back(t);
   return tokens;
 }
 
+vector<char*> make_argv(const vector<string> &tokens) {
+  vector<char*> argv;
+  argv.reserve(tokens.size() + 1);
+  for (const auto& s : tokens) {
+    argv.push_back(const_cast<char*>(s.c_str()));
+  }
+  argv.push_back(nullptr);
+  return argv;
+}
+ 
 void run_shell(istream &in) {
   for (;;) {
     // Get input
@@ -40,7 +50,8 @@ void run_shell(istream &in) {
       break;
 
     // Parse input
-    vector<char *> args = parse(input);
+    vector<string> tokens = parse(input);
+    vector<char *> args = make_argv(tokens);
     if (args.empty()) {
       continue;
     }
